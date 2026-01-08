@@ -177,7 +177,7 @@ def audio_delay_processing(input_audio_delay):
 # 音频延迟对准
     try:
         def adjust_audiooffset(match):
-            new_match_audiooffset = int(match.group(1)) + int(input_audio_delay)
+            new_match_audiooffset = int(match.group(1)) - int(input_audio_delay)
             return f"AudioOffset: {new_match_audiooffset}"
 
         def adjust_timing(match):

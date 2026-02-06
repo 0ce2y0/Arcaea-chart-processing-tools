@@ -7,6 +7,7 @@ tap_pattern = r"\((-?\d+),(\d+)\);"
 hold_pattern = r"hold\((-?\d+),(-?\d+),(\d+)\);"
 arc_pattern = r"arc\((-?\d+),(-?\d+),(-?[\d.]+),(-?[\d.]+),(\w+),(-?[\d.]+),(-?[\d.]+),(\d+),(\w+),(\w+)\)(?:\[(.*)\])?;"
 scenecontrol_pattern = r"scenecontrol\((-?\d+),(\w+),([\d.]+),(\d+)\);"
+timinggroup_pattern = r"timinggroup(?:\(noinput\)|\(\))?\{\n.*?\n\}"
 empty_timinggroup_pattern = r"timinggroup(?:\(noinput\)|\(\))\{\n\}"
 instructions_0 = """
 欢迎使用铺面处理脚本！此脚本主要用于提取铺面特定段落或调整铺面音频延迟AudioOffset。
@@ -143,15 +144,69 @@ def extract_file(input_number_one, input_number_two):
             else:
                 return f"scenecontrol({match.group(1)},{match.group(2)},{match.group(3)},{match.group(4)});"
        
+        def fix_negative_timing(block_text):
+            # 定义处理负数timing规则
+            ms = list(re.finditer(timing_pattern, block_text))
+            if not ms:
+                return block_text
+            keep = keep_t = keep_old = keep_new = None
+            for m in ms:
+                t = int(m.group(1))
+                if t <= 0 and (keep is None or t > keep_t):
+                    keep = m
+                    keep_t = t
+            if keep is not None:
+                keep_old = keep.group(0)
+                keep_new = f"timing(0,{keep.group(2)},{keep.group(3)});"
+            def rewrite(m):
+                t = int(m.group(1))
+                line = m.group(0)
+                if t >= 0:
+                    return line
+                if keep_old is not None and line == keep_old:
+                    return keep_new
+                return ""
+            return re.sub(timing_pattern, rewrite, block_text)
+
+        def fix_negative_timing(text):
+            # 区分timinggroup内外分别处理负数timing
+            tgs = list(re.finditer(timinggroup_pattern, text, flags=re.DOTALL))
+            if not tgs:
+                return fix_negative_timing(text)
+            out = []
+            cur = 0
+            for m in tgs:
+                s, e = m.span()
+                out.append(fix_negative_timing(text[cur:s]))
+                out.append(m.group(0))
+                cur = e
+            out.append(fix_negative_timing(text[cur:]))
+            temp = "".join(out)
+            def fix_one_tg(m):
+                blk = m.group(0)
+                head = re.match(r"(timinggroup(?:\(noinput\)|\(\))?\{\r?\n)", blk)
+                tail = re.search(r"(\r?\n\}\s*;?\s*)$", blk)
+                if head and tail:
+                    h = head.group(1)
+                    t = tail.group(1)
+                    inner = blk[len(h):-len(t)]
+                    inner_fixed = fix_negative_timing(inner)
+                    return h + inner_fixed + t
+                return fix_negative_timing(blk)
+            return re.sub(timinggroup_pattern, fix_one_tg, temp, flags=re.DOTALL)
+
         # 处理流程
         with open(input_path, 'r', encoding='utf-8') as file:
             lines = file.read()
+            
             # 对铺面元素进行移动处理
             lines = re.sub(timing_pattern, subtract_timing, lines)
             lines = re.sub(tap_pattern, subtract_tap, lines)
             lines = re.sub(hold_pattern, subtract_hold, lines)
             lines = re.sub(arc_pattern, subtract_arc, lines)
             lines = re.sub(scenecontrol_pattern, subtract_scenecontrol, lines)
+            # 对特殊timing进行处理
+            lines = fix_negative_timing(lines)
             # 删除范围外的铺面元素
             lines = re.sub(timing_pattern, delete_timing, lines)
             lines = re.sub(tap_pattern, delete_tap, lines)
@@ -260,8 +315,6 @@ if __name__ == "__main__":
                         print("开始提取铺面片段并移动到起点位置......")
                         extract_file(input_number_one, input_number_two)
                         print("程序1运行结束！")
-                        print("Tips: 脚本用完需要用Arcade/文本编辑器把多余的Timing删掉，不过不删也不影响铺面")
-                        # 起始时间为负数的Timing太难特殊处理了，经第一部分运算后，会出现若干起始时间≤0的Timing，如果直接删除这些Timing会导致谱面文件开头没有timing从而导致铺面出错，所以只能选出最后一个起始时间≤0的Timing，并把起始时间改为0然后保留下来。然而这又涉及到timinggroup的情况，每个timinggroup内都有可能出现起始时间≤0的Timing，如果对timinggroup外和每个timinggroup内的Timing分别处理，这样写下来代码会非常长。所以我不想写了 ⌓‿⌓
                         break
                     else:
                         print("输入有误，请重新输入正确选项")

@@ -10,19 +10,19 @@ scenecontrol_pattern = r"scenecontrol\((-?\d+),(\w+),([\d.]+),(\d+)\);"
 timinggroup_pattern = r"timinggroup(?:\(noinput\)|\(\))?\{\n.*?\n\}"
 empty_timinggroup_pattern = r"timinggroup(?:\(noinput\)|\(\))\{\n\}"
 instructions_0 = """
-欢迎使用铺面处理脚本！此脚本主要用于提取铺面特定段落或调整铺面音频延迟AudioOffset。
+欢迎使用铺面处理脚本！此脚本主要用于提取铺面特定段落或调整铺面延迟AudioOffset。
 脚本作者：CE2Y   github地址：http://github.com/0ce2y0
 """
 instructions_1 = """
 说明：若需提取铺面的特定段落，请输入数字1；
-若需在保证音频与铺面完全对准同时将铺面AudioOffset音频延迟调整为0，请输入数字2。
+若需在保证音频与铺面完全对准同时将铺面AudioOffset延迟调整为0，请输入数字2。
 """
 instructions_2 = """
 分别输入铺面片段起始位置时间与结束位置时间，铺面片段起始与结束时间可从Arcade中查取。
 """
 instructions_3 = """
 请输入所需调整的延迟时间。
-示例：Arcade中显示音频延迟为100，则输入数字100。
+示例：Arcade中显延迟为100，则输入数字100。
 """
 
 # =========================================================

@@ -144,17 +144,19 @@ def extract_file(input_number_one, input_number_two):
             else:
                 return f"scenecontrol({match.group(1)},{match.group(2)},{match.group(3)},{match.group(4)});"
        
-        def fix_negative_timing(block_text):
+        def fix_negative_timing_block(text):
             # 定义处理负数timing规则
-            ms = list(re.finditer(timing_pattern, block_text))
+            ms = list(re.finditer(timing_pattern, text))
             if not ms:
-                return block_text
-            keep = keep_t = keep_old = keep_new = None
+                return text
+            keep = keep_t = None
             for m in ms:
                 t = int(m.group(1))
                 if t <= 0 and (keep is None or t > keep_t):
                     keep = m
                     keep_t = t
+            keep_old = keep.group(0) if keep else None
+            keep_new = f"timing(0,{keep.group(2)},{keep.group(3)});" if keep else None
             if keep is not None:
                 keep_old = keep.group(0)
                 keep_new = f"timing(0,{keep.group(2)},{keep.group(3)});"
@@ -166,13 +168,13 @@ def extract_file(input_number_one, input_number_two):
                 if keep_old is not None and line == keep_old:
                     return keep_new
                 return ""
-            return re.sub(timing_pattern, rewrite, block_text)
+            return re.sub(timing_pattern, rewrite, text)
 
         def fix_negative_timing(text):
             # 区分timinggroup内外分别处理负数timing
             tgs = list(re.finditer(timinggroup_pattern, text, flags=re.DOTALL))
             if not tgs:
-                return fix_negative_timing(text)
+                return fix_negative_timing_block(text)
             out = []
             cur = 0
             for m in tgs:
@@ -190,9 +192,9 @@ def extract_file(input_number_one, input_number_two):
                     h = head.group(1)
                     t = tail.group(1)
                     inner = blk[len(h):-len(t)]
-                    inner_fixed = fix_negative_timing(inner)
+                    inner_fixed = fix_negative_timing_block(inner)
                     return h + inner_fixed + t
-                return fix_negative_timing(blk)
+                return fix_negative_timing_block(blk)
             return re.sub(timinggroup_pattern, fix_one_tg, temp, flags=re.DOTALL)
 
         # 处理流程

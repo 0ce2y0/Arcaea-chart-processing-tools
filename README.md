@@ -2,7 +2,7 @@
 此脚本用于对Arcaea铺面特定片段进行提取，或将AudioOffset延迟修正为0。
 
 README是发布B站专栏前写好的，写得比较乱，建议看B站专栏：
-https://m.bilibili.com/opus/1174718412110168067?plat_id=5&share_from=article&share_medium=android&share_plat=android&share_session_id=776a9cbf-5917-446f-bb0a-ab21fcc31b19&share_source=QQ&share_tag=s_i&spmid=dt.opus-detail.0.0&timestamp=1772377058&unique_k=0HT127o
+https://b23.tv/LZqDeXY
 
 ---
 
